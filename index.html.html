@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام الحضور والمدفوعات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+:root {
+  --primary:#1a5f3f; --primary-light:#2d8a5e; --accent:#f0a500;
+  --bg:#f4f7f5; --card:#fff; --text:#1a2e23; --muted:#6b8a76;
+  --danger:#e53935; --success:#2e7d32; --border:#d0e4d9;
+  --blue:#1565c0; --purple:#6a1b9a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+.header{background:var(--primary);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2);}
+.header h1{font-size:18px;font-weight:900;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.group-select-header{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;font-family:'Cairo',sans-serif;font-size:13px;padding:6px 10px;border-radius:8px;outline:none;max-width:150px;}
+
+.nav{display:flex;background:var(--primary);border-top:1px solid rgba(255,255,255,.1);overflow-x:auto;}
+.nav button{flex:1;padding:11px 6px;background:none;border:none;color:rgba(255,255,255,.65);font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:.2s;}
+.nav button.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+.page{display:none;padding:16px;max-width:700px;margin:0 auto;}
+.page.active{display:block;}
+
+.card{background:var(--card);border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);border:1px solid var(--border);}
+.card h2{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--primary);}
+
+.input-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+input[type=text],input[type=number],select{
+  flex:1;min-width:120px;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;
+  font-family:'Cairo',sans-serif;font-size:13px;outline:none;background:#fafffe;color:var(--text);text-align:right;transition:.2s;
+}
+input:focus,select:focus{border-color:var(--primary-light);}
+
+.btn{padding:9px 16px;border:none;border-radius:10px;font-family:'Cairo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:5px;}
+.btn-primary{background:var(--primary);color:#fff;} .btn-primary:hover{background:var(--primary-light);}
+.btn-accent{background:var(--accent);color:#fff;} .btn-accent:hover{background:#d4920a;}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-success{background:var(--success);color:#fff;}
+.btn-outline{background:none;border:1.5px solid var(--primary);color:var(--primary);}
+.btn-blue{background:var(--blue);color:#fff;}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.btn-full{width:100%;justify-content:center;}
+
+/* GROUPS */
+.group-pill{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;margin:3px;cursor:pointer;transition:.2s;}
+.group-pill.active{background:var(--accent);}
+.group-pill .del-g{opacity:.7;font-size:11px;} .group-pill .del-g:hover{opacity:1;}
+.groups-bar{display:flex;flex-wrap:wrap;margin-bottom:12px;}
+
+/* STUDENT ITEM */
+.student-item{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-radius:10px;background:var(--bg);margin-bottom:7px;border:1px solid var(--border);}
+.student-info{display:flex;align-items:center;gap:10px;}
+.avatar{width:36px;height:36px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;}
+.s-name{font-weight:700;font-size:13px;}
+.s-sub{font-size:11px;color:var(--muted);}
+.s-actions{display:flex;gap:5px;}
+
+/* QR */
+.qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;}
+.qr-card{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
+.qr-card .qr-name{font-weight:700;font-size:12px;margin-top:8px;}
+.qr-card .qr-sub{font-size:10px;color:var(--muted);}
+
+/* SCAN */
+#scanner-wrap{border-radius:14px;overflow:hidden;background:#000;min-height:260px;}
+.scan-result{padding:14px;border-radius:12px;margin-top:12px;text-align:center;font-weight:700;font-size:14px;display:none;}
+.scan-result.ok{background:#e8f5e9;color:var(--success);display:block;}
+.scan-result.err{background:#ffebee;color:var(--danger);display:block;}
+.scan-result.warn{background:#fff8e1;color:#e65100;display:block;}
+
+/* PAYMENT */
+.pay-status{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.pay-ok{background:#e8f5e9;color:var(--success);}
+.pay-no{background:#ffebee;color:var(--danger);}
+.month-tab{display:inline-block;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);margin:3px;background:#fff;}
+.month-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.stat-box{background:var(--card);border-radius:12px;padding:12px;text-align:center;border:1px solid var(--border);}
+.stat-box .num{font-size:24px;font-weight:900;color:var(--primary);}
+.stat-box .lbl{font-size:10px;color:var(--muted);margin-top:2px;}
+
+.log-item{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:10px;margin-bottom:6px;background:var(--bg);border:1px solid var(--border);font-size:12px;}
+
+.report-table{width:100%;border-collapse:collapse;font-size:12px;}
+.report-table th{background:var(--primary);color:#fff;padding:9px 8px;text-align:right;font-weight:600;}
+.report-table td{padding:9px 8px;border-bottom:1px solid var(--border);}
+.report-table tr:hover td{background:#f0f7f3;}
+.pct.high{color:var(--success);font-weight:700;}
+.pct.mid{color:#f57f17;font-weight:700;}
+.pct.low{color:var(--danger);font-weight:700;}
+
+.empty{text-align:center;padding:30px;color:var(--muted);}
+.empty .icon{font-size:40px;margin-bottom:8px;}
+.empty p{font-size:13px;}
+
+.section-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:999;}
+.modal-overlay.open{display:flex;}
+.modal{background:#fff;border-radius:16px;padding:22px;width:90%;max-width:320px;text-align:center;}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:6px;}
+.modal p{font-size:12px;color:var(--muted);margin-bottom:16px;}
+.modal-btns{display:flex;gap:8px;}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a2e23;color:#fff;padding:11px 22px;border-radius:30px;font-size:13px;font-weight:700;z-index:9999;transition:transform .3s;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+.badge-group{background:#e3f2fd;color:var(--blue);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;}
+
+@media print{
+  .header,.nav,.btn,.scan-controls,#scan-controls-bar{display:none!important;}
+  .page{display:block!important;padding:0;}
+  .qr-grid{grid-template-columns:repeat(3,1fr);}
+  .qr-card{break-inside:avoid;}
+  body{background:#fff;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📋 نظام الحضور والدفع</h1>
+  <div class="header-right">
+    <select class="group-select-header" id="global-group-select" onchange="onGlobalGroupChange()">
+      <option value="">كل المجموعات</option>
+    </select>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="active" onclick="showPage('groups',this)">🗂️ المجموعات</button>
+  <button onclick="showPage('students',this)">👥 الطلبة</button>
+  <button onclick="showPage('qrcodes',this)">🖨️ QR</button>
+  <button onclick="showPage('scan',this)">📷 Scan</button>
+  <button onclick="showPage('payments',this)">💰 المدفوعات</button>
+  <button onclick="showPage('report',this)">📊 التقارير</button>
+</div>
+
+<!-- PAGE: GROUPS -->
+<div class="page active" id="page-groups">
+
+  <div class="card" style="border:2px solid var(--accent)">
+    <h2>📲 نقل البيانات للموبايل</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">اضغط "انسخ البيانات" على الكمبيوتر، ابعتها لنفسك على واتساب، وبعدين الزق على الموبايل</p>
+
+    <!-- EXPORT: copy text -->
+    <div style="margin-bottom:12px">
+      <div class="section-label">على الكمبيوتر — انسخ البيانات</div>
+      <button class="btn btn-success btn-full" onclick="copyData()">📋 انسخ البيانات</button>
+      <div id="copy-status" style="margin-top:6px;font-size:12px;text-align:center;color:var(--success);display:none">✅ تم النسخ! ابعتها لنفسك على واتساب أو إيميل</div>
+    </div>
+
+    <!-- IMPORT: paste text -->
+    <div>
+      <div class="section-label">على الموبايل — الزق البيانات هنا</div>
+      <textarea id="import-text" placeholder="الزق البيانات هنا..." style="width:100%;height:80px;padding:10px;border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-size:12px;resize:none;outline:none;direction:ltr"></textarea>
+      <button class="btn btn-blue btn-full" style="margin-top:6px" onclick="importFromText()">📤 استيراد البيانات</button>
+      <div id="import-status" style="margin-top:6px;font-size:12px;text-align:center;display:none"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>➕ إنشاء مجموعة جديدة</h2>
+    <div class="input-row">
+      <input type="text" id="group-name-input" placeholder="اسم المجموعة (مثال: مجموعة A)">
+      <input type="text" id="group-desc-input" placeholder="وصف اختياري">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="addGroup()">إنشاء المجموعة</button>
+  </div>
+  <div class="card">
+    <h2>🗂️ المجموعات (<span id="groups-count">0</span>)</h2>
+    <div id="groups-list"></div>
+  </div>
+</div>
+
+<!-- PAGE: STUDENTS -->
+<div class="page" id="page-students">
+  <div class="card">
+    <h2>➕ إضافة طالب</h2>
+    <div class="input-row">
+      <input type="text" id="student-name-input" placeholder="اسم الطالب" onkeydown="if(event.key==='Enter')addStudent()">
+      <select id="student-group-select"><option value="">-- اختر مجموعة --</option></select>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="addStudent()">➕ إضافة</button>
+  </div>
+  <div class="card">
+    <div class="input-row" style="margin-bottom:8px">
+      <select id="filter-group-students" onchange="renderStudents()"><option value="">كل المجموعات</option></select>
+    </div>
+    <h2>👥 الطلبة (<span id="student-count">0</span>)</h2>
+    <div id="students-list"></div>
+  </div>
+</div>
+
+<!-- PAGE: QR CODES -->
+<div class="page" id="page-qrcodes">
+  <div class="card">
+    <h2>🖨️ طباعة بطاقات QR</h2>
+    <div class="input-row">
+      <select id="qr-filter-group" onchange="renderQRCodes()"><option value="">كل المجموعات</option></select>
+      <button class="btn btn-primary" onclick="window.print()">🖨️ طباعة</button>
+    </div>
+  </div>
+  <div class="qr-grid" id="qr-grid"></div>
+</div>
+
+<!-- PAGE: SCAN -->
+<div class="page" id="page-scan">
+  <div class="card">
+    <h2>⚙️ إعدادات الجلسة</h2>
+    <div class="section-label">نوع الـ Scan</div>
+    <div class="input-row" style="margin-bottom:10px">
+      <button class="btn btn-primary" id="mode-attend-btn" onclick="setScanMode('attendance')">📋 تسجيل حضور</button>
+      <button class="btn btn-outline" id="mode-pay-btn" onclick="setScanMode('payment')">💰 تسجيل دفع</button>
+    </div>
+    <div id="attend-session-area">
+      <div class="section-label">اسم الحصة</div>
+      <div class="input-row">
+        <input type="text" id="session-name" placeholder="مثال: رياضيات - أسبوع 1">
+        <select id="session-group-select"><option value="">كل المجموعات</option></select>
+      </div>
+    </div>
+    <div id="pay-month-area" style="display:none">
+      <div class="section-label">الشهر</div>
+      <div class="input-row">
+        <input type="month" id="payment-month" style="flex:1">
+        <select id="pay-group-select"><option value="">كل المجموعات</option></select>
+      </div>
+    </div>
+    <button class="btn btn-accent btn-full" onclick="startSession()">▶️ بدء</button>
+  </div>
+
+  <div class="card" id="scanner-card" style="display:none">
+    <h2 id="scan-card-title">📷 امسح الـ QR</h2>
+    <div id="scan-controls-bar" style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="btn btn-primary btn-full" id="start-scan-btn" onclick="startScanner()">▶️ تشغيل الكاميرا</button>
+      <button class="btn btn-danger" id="stop-scan-btn" onclick="stopScanner()" style="display:none">⏹ إيقاف</button>
+    </div>
+    <div id="scanner-wrap"></div>
+    <div id="scan-result" class="scan-result"></div>
+  </div>
+
+  <div class="card" id="scan-log-card" style="display:none">
+    <h2>✅ سجل الجلسة (<span id="session-log-count">0</span>)</h2>
+    <div id="session-log"></div>
+  </div>
+</div>
+
+<!-- PAGE: PAYMENTS -->
+<div class="page" id="page-payments">
+  <div class="card">
+    <h2>💰 متابعة المدفوعات</h2>
+    <div class="input-row">
+      <input type="month" id="view-pay-month">
+      <select id="view-pay-group"><option value="">كل المجموعات</option></select>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="renderPayments()">🔍 عرض</button>
+  </div>
+  <div class="stats-row" id="pay-stats" style="display:none">
+    <div class="stat-box"><div class="num" id="ps-total">0</div><div class="lbl">إجمالي الطلبة</div></div>
+    <div class="stat-box"><div class="num" id="ps-paid" style="color:var(--success)">0</div><div class="lbl">دفعوا ✅</div></div>
+    <div class="stat-box"><div class="num" id="ps-unpaid" style="color:var(--danger)">0</div><div class="lbl">لم يدفعوا ❌</div></div>
+  </div>
+  <div class="card" id="pay-list-card" style="display:none">
+    <h2 id="pay-list-title">قائمة الدفع</h2>
+    <div id="pay-list"></div>
+  </div>
+</div>
+
+<!-- PAGE: REPORT -->
+<div class="page" id="page-report">
+  <div class="card">
+    <div class="input-row">
+      <select id="report-group-filter" onchange="renderReport()"><option value="">كل المجموعات</option></select>
+    </div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-box"><div class="num" id="r-students">0</div><div class="lbl">الطلبة</div></div>
+    <div class="stat-box"><div class="num" id="r-sessions">0</div><div class="lbl">الحصص</div></div>
+    <div class="stat-box"><div class="num" id="r-avg">0%</div><div class="lbl">متوسط الحضور</div></div>
+  </div>
+  <div class="card">
+    <h2>📊 تقرير الحضور</h2>
+    <div style="overflow-x:auto">
+      <table class="report-table">
+        <thead><tr><th>الطالب</th><th>المجموعة</th><th>حضر</th><th>غاب</th><th>%</th></tr></thead>
+        <tbody id="report-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h2>📅 سجل الحصص</h2>
+    <div id="sessions-report-list"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <h3 id="modal-title">تأكيد</h3>
+    <p id="modal-text"></p>
+    <div class="modal-btns">
+      <button class="btn btn-danger btn-full" onclick="confirmModalAction()">تأكيد</button>
+      <button class="btn btn-outline btn-full" onclick="closeModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== STATE ==========
+let groups   = JSON.parse(localStorage.getItem('qr_groups')   || '[]');
+let students = JSON.parse(localStorage.getItem('qr_students') || '[]');
+let sessions = JSON.parse(localStorage.getItem('qr_sessions') || '[]');
+let payments = JSON.parse(localStorage.getItem('qr_payments') || '[]'); // {studentId, month, paidAt}
+
+let currentSession = null;
+let scanMode = 'attendance'; // 'attendance' | 'payment'
+let scanner = null;
+let lastScanned = '', lastScannedTime = 0;
+let modalAction = null;
+let currentGlobalGroup = '';
+
+// ========== INIT ==========
+setDefaultMonth();
+refreshAllSelects();
+renderGroups();
+renderStudents();
+renderQRCodes();
+renderReport();
+
+function setDefaultMonth(){
+  const now = new Date();
+  const m = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const el1 = document.getElementById('payment-month');
+  const el2 = document.getElementById('view-pay-month');
+  if(el1) el1.value = m;
+  if(el2) el2.value = m;
+}
+
+// ========== NAV ==========
+function showPage(name, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(name==='qrcodes') renderQRCodes();
+  if(name==='report') renderReport();
+  if(name==='students') renderStudents();
+}
+
+function onGlobalGroupChange(){
+  currentGlobalGroup = document.getElementById('global-group-select').value;
+}
+
+// ========== SELECTS REFRESH ==========
+function refreshAllSelects(){
+  const ids = ['student-group-select','filter-group-students','qr-filter-group',
+               'session-group-select','pay-group-select','view-pay-group',
+               'report-group-filter','global-group-select'];
+  ids.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    const cur = el.value;
+    while(el.options.length > 1) el.remove(1);
+    groups.forEach(g=>{
+      const o = document.createElement('option');
+      o.value = g.id; o.textContent = g.name;
+      el.appendChild(o);
+    });
+    el.value = cur;
+  });
+  // pay-group in scan
+  const pgSess = document.getElementById('session-group-select');
+  if(pgSess && !pgSess.value && groups.length>0) {}
+}
+
+// ========== GROUPS ==========
+function addGroup(){
+  const name = document.getElementById('group-name-input').value.trim();
+  const desc = document.getElementById('group-desc-input').value.trim();
+  if(!name) return showToast('⚠️ اكتب اسم المجموعة');
+  groups.push({id:'GRP'+Date.now(), name, desc});
+  save();
+  document.getElementById('group-name-input').value='';
+  document.getElementById('group-desc-input').value='';
+  refreshAllSelects();
+  renderGroups();
+  showToast('✅ تم إنشاء '+name);
+}
+
+function renderGroups(){
+  const list = document.getElementById('groups-list');
+  document.getElementById('groups-count').textContent = groups.length;
+  if(!groups.length){
+    list.innerHTML='<div class="empty"><div class="icon">🗂️</div><p>لا توجد مجموعات بعد</p></div>';
+    return;
+  }
+  list.innerHTML = groups.map(g=>{
+    const count = students.filter(s=>s.groupId===g.id).length;
+    return `<div class="student-item">
+      <div class="student-info">
+        <div class="avatar" style="background:var(--blue)">${g.name.charAt(0)}</div>
+        <div>
+          <div class="s-name">${g.name}</div>
+          <div class="s-sub">${g.desc||''} · ${count} طالب</div>
+        </div>
+      </div>
+      <div class="s-actions">
+        <button class="btn btn-danger btn-sm" onclick="deleteGroup('${g.id}','${g.name}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteGroup(id, name){
+  modalAction = ()=>{
+    groups = groups.filter(g=>g.id!==id);
+    students = students.map(s=>s.groupId===id?{...s,groupId:''}:s);
+    save(); refreshAllSelects(); renderGroups(); renderStudents();
+    showToast('🗑️ تم حذف '+name);
+  };
+  openModal('حذف المجموعة','هل تريد حذف "'+name+'"؟ الطلبة لن يُحذفوا.');
+}
+
+// ========== STUDENTS ==========
+function addStudent(){
+  const name = document.getElementById('student-name-input').value.trim();
+  const groupId = document.getElementById('student-group-select').value;
+  if(!name) return showToast('⚠️ اكتب اسم الطالب');
+  students.push({id:'STU'+Date.now(), name, groupId});
+  save();
+  document.getElementById('student-name-input').value='';
+  renderStudents();
+  renderGroups();
+  showToast('✅ تم إضافة '+name);
+}
+
+function renderStudents(){
+  const filter = document.getElementById('filter-group-students')?.value || '';
+  const list = document.getElementById('students-list');
+  let arr = filter ? students.filter(s=>s.groupId===filter) : students;
+  document.getElementById('student-count').textContent = arr.length;
+  if(!arr.length){
+    list.innerHTML='<div class="empty"><div class="icon">👥</div><p>لا يوجد طلبة</p></div>';
+    return;
+  }
+  list.innerHTML = arr.map(s=>{
+    const g = groups.find(g=>g.id===s.groupId);
+    return `<div class="student-item">
+      <div class="student-info">
+        <div class="avatar">${s.name.charAt(0)}</div>
+        <div>
+          <div class="s-name">${s.name}</div>
+          <div class="s-sub">${g?'<span class="badge-group">'+g.name+'</span>':''} <span style="color:var(--muted)">${s.id}</span></div>
+        </div>
+      </div>
+      <div class="s-actions">
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}','${s.name}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteStudent(id,name){
+  modalAction=()=>{
+    students=students.filter(s=>s.id!==id);
+    save(); renderStudents(); renderGroups();
+    showToast('🗑️ تم حذف '+name);
+  };
+  openModal('حذف طالب','هل تريد حذف "'+name+'"؟');
+}
+
+// ========== QR CODES ==========
+function renderQRCodes(){
+  const filter = document.getElementById('qr-filter-group')?.value||'';
+  const grid = document.getElementById('qr-grid');
+  grid.innerHTML='';
+  let arr = filter ? students.filter(s=>s.groupId===filter) : students;
+  if(!arr.length){
+    grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="icon">🔲</div><p>لا يوجد طلبة</p></div>';
+    return;
+  }
+  arr.forEach(s=>{
+    const g = groups.find(g=>g.id===s.groupId);
+    const card = document.createElement('div');
+    card.className='qr-card';
+    card.innerHTML=`<div id="qr-${s.id}"></div><div class="qr-name">${s.name}</div><div class="qr-sub">${g?g.name:''}</div>`;
+    grid.appendChild(card);
+    setTimeout(()=>{
+      new QRCode(document.getElementById('qr-'+s.id),{
+        text:s.id+'|'+s.name,
+        width:130,height:130,
+        colorDark:'#1a5f3f',colorLight:'#fff',
+        correctLevel:QRCode.CorrectLevel.H
+      });
+    },50);
+  });
+}
+
+// ========== SCAN ==========
+function setScanMode(mode){
+  scanMode=mode;
+  document.getElementById('attend-session-area').style.display = mode==='attendance'?'block':'none';
+  document.getElementById('pay-month-area').style.display = mode==='payment'?'block':'none';
+  document.getElementById('mode-attend-btn').className = 'btn '+(mode==='attendance'?'btn-primary':'btn-outline');
+  document.getElementById('mode-pay-btn').className = 'btn '+(mode==='payment'?'btn-accent':'btn-outline');
+}
+
+function startSession(){
+  if(scanMode==='attendance'){
+    const name = document.getElementById('session-name').value.trim();
+    if(!name) return showToast('⚠️ اكتب اسم الحصة');
+    const gid = document.getElementById('session-group-select').value;
+    const g = groups.find(x=>x.id===gid);
+    currentSession={
+      id:'SES'+Date.now(), type:'attendance', name,
+      groupId:gid, groupName:g?g.name:'كل الطلبة',
+      date:new Date().toISOString(), attendance:[]
+    };
+    document.getElementById('scan-card-title').textContent='📋 تسجيل حضور: '+name;
+  } else {
+    const month = document.getElementById('payment-month').value;
+    if(!month) return showToast('⚠️ اختر الشهر');
+    const gid = document.getElementById('pay-group-select').value;
+    const g = groups.find(x=>x.id===gid);
+    currentSession={
+      id:'PAY'+Date.now(), type:'payment', month,
+      groupId:gid, groupName:g?g.name:'كل الطلبة',
+      date:new Date().toISOString(), records:[]
+    };
+    document.getElementById('scan-card-title').textContent='💰 تسجيل دفع: '+month;
+  }
+  document.getElementById('scanner-card').style.display='block';
+  document.getElementById('scan-log-card').style.display='block';
+  document.getElementById('session-log-count').textContent='0';
+  document.getElementById('session-log').innerHTML='';
+  document.getElementById('scan-result').className='scan-result';
+  showToast('✅ بدأت الجلسة');
+}
+
+function startScanner(){
+  if(!students.length) return showToast('⚠️ أضف طلبة أولاً');
+  document.getElementById('start-scan-btn').style.display='none';
+  document.getElementById('stop-scan-btn').style.display='inline-flex';
+  scanner = new Html5Qrcode('scanner-wrap');
+  scanner.start(
+    {facingMode:'environment'},
+    {fps:10,qrbox:{width:200,height:200}},
+    onScanSuccess, ()=>{}
+  ).catch(()=>{
+    showToast('❌ تعذر الوصول للكاميرا');
+    document.getElementById('start-scan-btn').style.display='inline-flex';
+    document.getElementById('stop-scan-btn').style.display='none';
+  });
+}
+
+function stopScanner(){
+  if(scanner){
+    scanner.stop().then(()=>{
+      scanner=null;
+      document.getElementById('start-scan-btn').style.display='inline-flex';
+      document.getElementById('stop-scan-btn').style.display='none';
+      document.getElementById('scanner-wrap').innerHTML='';
+    });
+  }
+  if(currentSession){
+    if(currentSession.type==='attendance' && currentSession.attendance.length>0){
+      sessions.push(currentSession);
+    }
+    if(currentSession.type==='payment' && currentSession.records.length>0){
+      currentSession.records.forEach(r=>{
+        if(!payments.find(p=>p.studentId===r.studentId&&p.month===currentSession.month)){
+          payments.push({studentId:r.studentId,studentName:r.studentName,month:currentSession.month,paidAt:r.time});
+        }
+      });
+    }
+    save();
+    showToast('💾 تم حفظ الجلسة');
+  }
+}
+
+function onScanSuccess(decoded){
+  const now=Date.now();
+  if(decoded===lastScanned && now-lastScannedTime<3000) return;
+  lastScanned=decoded; lastScannedTime=now;
+  const parts=decoded.split('|');
+  const studentId=parts[0];
+  const student=students.find(s=>s.id===studentId);
+  const res=document.getElementById('scan-result');
+  if(!student){ res.className='scan-result err'; res.textContent='❌ الطالب غير معروف!'; return; }
+  if(!currentSession){ res.className='scan-result err'; res.textContent='⚠️ ابدأ جلسة أولاً!'; return; }
+
+  const time=new Date().toLocaleTimeString('ar-EG');
+  const g=groups.find(x=>x.id===student.groupId);
+
+  if(currentSession.type==='attendance'){
+    if(currentSession.attendance.find(a=>a.studentId===studentId)){
+      res.className='scan-result warn'; res.textContent='⚠️ '+student.name+' سبق تسجيل حضوره!'; return;
+    }
+    currentSession.attendance.push({studentId,studentName:student.name,time});
+    res.className='scan-result ok'; res.textContent='✅ حضور: '+student.name;
+    addLogItem(student.name, g?g.name:'', time, '✅ حاضر','#e8f5e9');
+  } else {
+    if(payments.find(p=>p.studentId===studentId&&p.month===currentSession.month)||
+       currentSession.records.find(r=>r.studentId===studentId)){
+      res.className='scan-result warn'; res.textContent='⚠️ '+student.name+' سبق تسجيل دفعه!'; return;
+    }
+    currentSession.records.push({studentId,studentName:student.name,time});
+    res.className='scan-result ok'; res.textContent='💰 تم تسجيل دفع: '+student.name;
+    addLogItem(student.name, g?g.name:'', time, '💰 دفع','#e8f5e9');
+  }
+
+  const count = currentSession.type==='attendance'
+    ? currentSession.attendance.length
+    : currentSession.records.length;
+  document.getElementById('session-log-count').textContent=count;
+  setTimeout(()=>{res.className='scan-result';},2500);
+}
+
+function addLogItem(name,group,time,badge,bg){
+  const log=document.getElementById('session-log');
+  const div=document.createElement('div');
+  div.className='log-item';
+  div.style.background=bg;
+  div.innerHTML=`<div><b>${name}</b> ${group?'<span class="badge-group">'+group+'</span>':''}</div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:11px;color:var(--muted)">${time}</span>
+      <span class="pay-status pay-ok">${badge}</span>
+    </div>`;
+  log.prepend(div);
+}
+
+// ========== PAYMENTS PAGE ==========
+function renderPayments(){
+  const month=document.getElementById('view-pay-month').value;
+  const gid=document.getElementById('view-pay-group').value;
+  if(!month) return showToast('⚠️ اختر الشهر');
+  let arr = gid ? students.filter(s=>s.groupId===gid) : students;
+  const paidIds = payments.filter(p=>p.month===month).map(p=>p.studentId);
+  const paid=arr.filter(s=>paidIds.includes(s.id));
+  const unpaid=arr.filter(s=>!paidIds.includes(s.id));
+  document.getElementById('ps-total').textContent=arr.length;
+  document.getElementById('ps-paid').textContent=paid.length;
+  document.getElementById('ps-unpaid').textContent=unpaid.length;
+  document.getElementById('pay-stats').style.display='grid';
+  document.getElementById('pay-list-card').style.display='block';
+  document.getElementById('pay-list-title').textContent='💰 قائمة الدفع - '+month;
+  const list=document.getElementById('pay-list');
+  if(!arr.length){ list.innerHTML='<div class="empty"><p>لا يوجد طلبة</p></div>'; return; }
+  list.innerHTML=[...paid,...unpaid].map(s=>{
+    const isPaid=paidIds.includes(s.id);
+    const payRec=payments.find(p=>p.studentId===s.id&&p.month===month);
+    const g=groups.find(x=>x.id===s.groupId);
+    return `<div class="student-item">
+      <div class="student-info">
+        <div class="avatar" style="background:${isPaid?'var(--success)':'var(--danger)'}">${s.name.charAt(0)}</div>
+        <div>
+          <div class="s-name">${s.name}</div>
+          <div class="s-sub">${g?'<span class="badge-group">'+g.name+'</span>':''} ${isPaid?'<span style="font-size:11px;color:var(--muted)">'+payRec.paidAt+'</span>':''}</div>
+        </div>
+      </div>
+      <span class="pay-status ${isPaid?'pay-ok':'pay-no'}">${isPaid?'✅ دفع':'❌ لم يدفع'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ========== REPORT ==========
+function renderReport(){
+  const gid=document.getElementById('report-group-filter')?.value||'';
+  let arr = gid ? students.filter(s=>s.groupId===gid) : students;
+  let ses = gid ? sessions.filter(s=>!s.groupId||s.groupId===gid) : sessions;
+  document.getElementById('r-students').textContent=arr.length;
+  document.getElementById('r-sessions').textContent=ses.length;
+  const body=document.getElementById('report-body');
+  if(!arr.length){ body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:#999">لا يوجد بيانات</td></tr>'; document.getElementById('r-avg').textContent='0%'; }
+  else {
+    let tot=0;
+    body.innerHTML=arr.map(s=>{
+      const present=ses.filter(ss=>ss.attendance&&ss.attendance.find(a=>a.studentId===s.id)).length;
+      const absent=ses.length-present;
+      const pct=ses.length>0?Math.round(present/ses.length*100):0;
+      tot+=pct;
+      const cls=pct>=80?'high':pct>=60?'mid':'low';
+      const g=groups.find(x=>x.id===s.groupId);
+      return `<tr><td><b>${s.name}</b></td><td>${g?'<span class="badge-group">'+g.name+'</span>':'-'}</td><td>${present}</td><td>${absent}</td><td><span class="pct ${cls}">${pct}%</span></td></tr>`;
+    }).join('');
+    document.getElementById('r-avg').textContent=Math.round(tot/arr.length)+'%';
+  }
+  const sl=document.getElementById('sessions-report-list');
+  if(!ses.length){ sl.innerHTML='<div class="empty"><div class="icon">📅</div><p>لا توجد حصص</p></div>'; return; }
+  sl.innerHTML=ses.slice().reverse().map(s=>{
+    const d=new Date(s.date).toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric'});
+    return `<div class="log-item">
+      <div><b>${s.name}</b><br><span style="font-size:11px;color:var(--muted)">${d} · ${s.groupName||''}</span></div>
+      <span class="pay-status pay-ok">${s.attendance.length} حاضر</span>
+    </div>`;
+  }).join('');
+}
+
+// ========== SAVE ==========
+function save(){
+  localStorage.setItem('qr_groups',JSON.stringify(groups));
+  localStorage.setItem('qr_students',JSON.stringify(students));
+  localStorage.setItem('qr_sessions',JSON.stringify(sessions));
+  localStorage.setItem('qr_payments',JSON.stringify(payments));
+}
+
+// ========== MODAL ==========
+function openModal(title,text){ document.getElementById('modal-title').textContent=title; document.getElementById('modal-text').textContent=text; document.getElementById('confirm-modal').classList.add('open'); }
+function closeModal(){ document.getElementById('confirm-modal').classList.remove('open'); modalAction=null; }
+function confirmModalAction(){ if(modalAction) modalAction(); closeModal(); }
+
+// ========== EXPORT / IMPORT ==========
+async function copyData(){
+  const data = { groups, students, sessions, payments, exportedAt: new Date().toISOString(), version: 1 };
+  const json = JSON.stringify(data);
+  // copy to clipboard
+  try {
+    await navigator.clipboard.writeText(json);
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = json; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  }
+  document.getElementById('copy-status').style.display = 'block';
+  showToast('✅ تم النسخ! ابعتها على واتساب');
+}
+
+function importFromText(){
+  const text = document.getElementById('import-text').value.trim();
+  const status = document.getElementById('import-status');
+  status.style.display = 'block';
+  if(!text){ status.style.color='var(--danger)'; status.textContent='❌ الزق البيانات في الخانة أولاً'; return; }
+  try {
+    const data = JSON.parse(text);
+    if(!data.students || !data.groups) throw new Error();
+    groups   = data.groups   || [];
+    students = data.students || [];
+    sessions = data.sessions || [];
+    payments = data.payments || [];
+    save();
+    refreshAllSelects();
+    renderGroups();
+    renderStudents();
+    renderQRCodes();
+    renderReport();
+    status.style.color = 'var(--success)';
+    status.textContent = '✅ تم الاستيراد! ' + students.length + ' طالب، ' + groups.length + ' مجموعة';
+    document.getElementById('import-text').value = '';
+    showToast('✅ تم استيراد البيانات بنجاح!');
+  } catch(e) {
+    status.style.color = 'var(--danger)';
+    status.textContent = '❌ خطأ في البيانات، تأكد إنك نسخت كل النص صح';
+  }
+}
+
+// ========== TOAST ==========
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+</script>
+</body>
+</html>
