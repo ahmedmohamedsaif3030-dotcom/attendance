@@ -649,10 +649,10 @@ function renderQRCodes(){
     grid.appendChild(card);
     setTimeout(()=>{
       new QRCode(document.getElementById('qr-'+s.id),{
-        text:s.id+'|'+s.name,
+        text:s.id,
         width:130,height:130,
         colorDark:'#1a5f3f',colorLight:'#fff',
-        correctLevel:QRCode.CorrectLevel.H
+        correctLevel:QRCode.CorrectLevel.M
       });
     },50);
   });
@@ -949,11 +949,14 @@ function buildPrintSheets(arr){
 
       // Generate the QR directly and synchronously into the print sheet
       // (does not depend on the on-screen grid having finished rendering)
+      // Encode ONLY the student ID (not the name) and use a lower error-
+      // correction level, so the printed code stays simple enough to be
+      // scanned reliably at small sizes.
       new QRCode(qrBox, {
-        text: s.id + '|' + s.name,
+        text: s.id,
         width: 130, height: 130,
         colorDark: '#1a5f3f', colorLight: '#fff',
-        correctLevel: QRCode.CorrectLevel.H
+        correctLevel: QRCode.CorrectLevel.M
       });
     });
     container.appendChild(sheet);
