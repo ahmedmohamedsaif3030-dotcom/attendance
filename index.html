@@ -166,9 +166,10 @@ input:focus,select:focus{border-color:var(--primary-light);}
     overflow:hidden;
     break-inside:avoid;
   }
+  .print-cell canvas,
   .print-cell img{
-    width:24mm;
-    height:24mm;
+    width:24mm!important;
+    height:24mm!important;
     object-fit:contain;
   }
   .print-cell .pc-name{font-size:9px;font-weight:700;margin-top:1mm;line-height:1.15;}
@@ -928,22 +929,32 @@ function buildPrintSheets(arr){
     sheet.className = 'print-sheet';
     chunk.forEach(s=>{
       const g = groups.find(gr=>gr.id===s.groupId);
-      const qrEl = document.getElementById('qr-'+s.id);
-      let dataUrl = '';
-      if(qrEl){
-        const canvas = qrEl.querySelector('canvas');
-        if(canvas){ dataUrl = canvas.toDataURL('image/png'); }
-        else{
-          const img = qrEl.querySelector('img');
-          if(img) dataUrl = img.src;
-        }
-      }
       const cell = document.createElement('div');
       cell.className = 'print-cell';
-      cell.innerHTML = '<img src="'+dataUrl+'" alt="QR">'+
-        '<div class="pc-name">'+s.name+'</div>'+
-        '<div class="pc-sub">'+(g?g.name:'')+'</div>';
+
+      const qrBox = document.createElement('div');
+      cell.appendChild(qrBox);
+
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'pc-name';
+      nameDiv.textContent = s.name;
+      cell.appendChild(nameDiv);
+
+      const subDiv = document.createElement('div');
+      subDiv.className = 'pc-sub';
+      subDiv.textContent = g ? g.name : '';
+      cell.appendChild(subDiv);
+
       sheet.appendChild(cell);
+
+      // Generate the QR directly and synchronously into the print sheet
+      // (does not depend on the on-screen grid having finished rendering)
+      new QRCode(qrBox, {
+        text: s.id + '|' + s.name,
+        width: 130, height: 130,
+        colorDark: '#1a5f3f', colorLight: '#fff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
     });
     container.appendChild(sheet);
   }
@@ -954,7 +965,7 @@ function printQR(){
   let arr = filter ? students.filter(s=>s.groupId===filter) : students;
   if(!arr.length) return showToast('⚠️ لا يوجد طلبة لطباعتهم');
   buildPrintSheets(arr);
-  setTimeout(()=>window.print(), 150);
+  setTimeout(()=>window.print(), 250);
 }
 
 // ========== TOAST ==========
