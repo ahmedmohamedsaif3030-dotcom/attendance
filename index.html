@@ -573,13 +573,16 @@ function renderGroups(){
         </div>
       </div>
       <div class="s-actions">
-        <button class="btn btn-danger btn-sm" onclick="deleteGroup('${g.id}','${g.name}')">🗑️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteGroup('${g.id}')">🗑️</button>
       </div>
     </div>`;
   }).join('');
 }
 
-function deleteGroup(id, name){
+function deleteGroup(id){
+  const g = groups.find(x=>x.id===id);
+  if(!g) return;
+  const name = g.name;
   modalAction = ()=>{
     groups = groups.filter(g=>g.id!==id);
     students = students.map(s=>s.groupId===id?{...s,groupId:''}:s);
@@ -623,13 +626,16 @@ function renderStudents(){
         </div>
       </div>
       <div class="s-actions">
-        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}','${s.name}')">🗑️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑️</button>
       </div>
     </div>`;
   }).join('');
 }
 
-function deleteStudent(id,name){
+function deleteStudent(id){
+  const s = students.find(x=>x.id===id);
+  if(!s) return;
+  const name = s.name;
   modalAction=()=>{
     students=students.filter(s=>s.id!==id);
     save(); renderStudents(); renderGroups(); renderHome();
