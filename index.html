@@ -150,23 +150,23 @@ input:focus,select:focus{border-color:var(--primary-light);}
   #print-sheets{display:block!important;}
   .print-sheet{
     width:195.5mm;
-    height:271.2mm;
     display:grid;
     grid-template-columns:repeat(3,63.5mm);
-    grid-template-rows:repeat(8,33.9mm);
+    grid-template-rows:repeat(8,33.7mm);
     column-gap:2.5mm;
     row-gap:0mm;
     page-break-after:always;
+    page-break-inside:avoid;
   }
   .print-sheet:last-child{page-break-after:auto;}
   .print-cell{
     width:63.5mm;
-    height:33.9mm;
+    height:33.7mm;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    padding:0.8mm 2mm;
+    padding:0.6mm 2mm;
     text-align:center;
     overflow:hidden;
     break-inside:avoid;
