@@ -157,7 +157,7 @@ input:focus,select:focus{border-color:var(--primary-light);}
     display:inline-flex;
     vertical-align:top;
     width:63.5mm;
-    height:33.9mm;
+    height:33.7mm;
     flex-direction:column;
     align-items:center;
     justify-content:center;
@@ -334,6 +334,12 @@ input:focus,select:focus{border-color:var(--primary-light);}
       <select id="qr-filter-group" onchange="renderQRCodes()"><option value="">كل المجموعات</option></select>
       <button class="btn btn-primary" onclick="printQR()">🖨️ طباعة</button>
     </div>
+    <div class="section-label">🎯 ضبط دقيق (لو الكود مزحزح عن الملصق)</div>
+    <div class="input-row">
+      <input type="number" id="print-offset-x" placeholder="إزاحة أفقي (مم)" step="0.5" style="text-align:center">
+      <input type="number" id="print-offset-y" placeholder="إزاحة رأسي (مم)" step="0.5" style="text-align:center">
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:-6px">اطبع أول مرة على ورقة عادية، قيس الفرق بالمسطرة، اكتب الرقم هنا (موجب أو سالب) واطبع تاني — القيمة بتتحفظ تلقائي</p>
   </div>
   <div class="qr-grid" id="qr-grid"></div>
   <div id="print-sheets"></div>
@@ -530,7 +536,7 @@ function showPage(name, btn){
   document.getElementById('page-'+name).classList.add('active');
   if(btn) btn.classList.add('active');
   if(name==='home') renderHome();
-  if(name==='qrcodes') renderQRCodes();
+  if(name==='qrcodes'){ renderQRCodes(); loadPrintOffset(); }
   if(name==='report') renderReport();
   if(name==='students') renderStudents();
 }
@@ -1037,7 +1043,28 @@ function printQR(){
   let arr = filter ? students.filter(s=>s.groupId===filter) : students;
   if(!arr.length) return showToast('⚠️ لا يوجد طلبة لطباعتهم');
   buildPrintSheets(arr);
+  applyPrintOffset();
   setTimeout(()=>window.print(), 250);
+}
+
+function applyPrintOffset(){
+  const xEl = document.getElementById('print-offset-x');
+  const yEl = document.getElementById('print-offset-y');
+  const x = parseFloat(xEl?.value) || 0;
+  const y = parseFloat(yEl?.value) || 0;
+  localStorage.setItem('qr_print_offset_x', x);
+  localStorage.setItem('qr_print_offset_y', y);
+  const sheets = document.getElementById('print-sheets');
+  if(sheets) sheets.style.margin = y+'mm 0 0 '+x+'mm';
+}
+
+function loadPrintOffset(){
+  const x = localStorage.getItem('qr_print_offset_x');
+  const y = localStorage.getItem('qr_print_offset_y');
+  const xEl = document.getElementById('print-offset-x');
+  const yEl = document.getElementById('print-offset-y');
+  if(xEl && x!==null) xEl.value = x;
+  if(yEl && y!==null) yEl.value = y;
 }
 
 // ========== TOAST ==========
