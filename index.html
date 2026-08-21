@@ -152,12 +152,14 @@ input:focus,select:focus{border-color:var(--primary-light);}
     display:block!important;
     width:210mm;
     font-size:0;
+    --label-w:70mm;
+    --label-h:37.125mm;
   }
   .print-cell{
     display:inline-flex;
     vertical-align:top;
-    width:70mm;
-    height:37.125mm;
+    width:var(--label-w);
+    height:var(--label-h);
     flex-direction:column;
     align-items:center;
     justify-content:center;
@@ -175,8 +177,8 @@ input:focus,select:focus{border-color:var(--primary-light);}
   }
   .print-cell .print-qr-wrap canvas,
   .print-cell .print-qr-wrap img{
-    width:26mm!important;
-    height:26mm!important;
+    width:min(26mm, calc(var(--label-h) * 0.65))!important;
+    height:min(26mm, calc(var(--label-h) * 0.65))!important;
     object-fit:contain;
     display:block;
     image-rendering:pixelated;
@@ -331,12 +333,17 @@ input:focus,select:focus{border-color:var(--primary-light);}
       <select id="qr-filter-group" onchange="renderQRCodes()"><option value="">كل المجموعات</option></select>
       <button class="btn btn-primary" onclick="printQR()">🖨️ طباعة</button>
     </div>
+    <div class="section-label">📏 مقاس الملصق (بالظبط زي المكتوب على عبوتك)</div>
+    <div class="input-row">
+      <input type="number" id="label-width" placeholder="عرض الملصق (مم)" step="0.5" style="text-align:center">
+      <input type="number" id="label-height" placeholder="طول الملصق (مم)" step="0.5" style="text-align:center">
+    </div>
     <div class="section-label">🎯 ضبط دقيق (لو الكود مزحزح عن الملصق)</div>
     <div class="input-row">
       <input type="number" id="print-offset-x" placeholder="إزاحة أفقي (مم)" step="0.5" style="text-align:center">
       <input type="number" id="print-offset-y" placeholder="إزاحة رأسي (مم)" step="0.5" style="text-align:center">
     </div>
-    <p style="font-size:11px;color:var(--muted);margin-top:-6px">اطبع أول مرة على ورقة عادية، قيس الفرق بالمسطرة، اكتب الرقم هنا (موجب أو سالب) واطبع تاني — القيمة بتتحفظ تلقائي</p>
+    <p style="font-size:11px;color:var(--muted);margin-top:-6px">اكتب مقاس الملصق الحقيقي، اطبع أول مرة على ورقة عادية، قيس الفرق بالمسطرة، اضبط الإزاحة لو محتاجة — القيم بتتحفظ تلقائي</p>
   </div>
   <div class="qr-grid" id="qr-grid"></div>
   <div id="print-sheets"></div>
@@ -1051,8 +1058,20 @@ function applyPrintOffset(){
   const y = parseFloat(yEl?.value) || 0;
   localStorage.setItem('qr_print_offset_x', x);
   localStorage.setItem('qr_print_offset_y', y);
+
+  const wEl = document.getElementById('label-width');
+  const hEl = document.getElementById('label-height');
+  const w = parseFloat(wEl?.value) || 70;
+  const h = parseFloat(hEl?.value) || 37.125;
+  localStorage.setItem('qr_label_w', w);
+  localStorage.setItem('qr_label_h', h);
+
   const sheets = document.getElementById('print-sheets');
-  if(sheets) sheets.style.transform = 'translate('+x+'mm, '+y+'mm)';
+  if(sheets){
+    sheets.style.transform = 'translate('+x+'mm, '+y+'mm)';
+    sheets.style.setProperty('--label-w', w+'mm');
+    sheets.style.setProperty('--label-h', h+'mm');
+  }
 }
 
 function loadPrintOffset(){
@@ -1062,6 +1081,13 @@ function loadPrintOffset(){
   const yEl = document.getElementById('print-offset-y');
   if(xEl && x!==null) xEl.value = x;
   if(yEl && y!==null) yEl.value = y;
+
+  const w = localStorage.getItem('qr_label_w');
+  const h = localStorage.getItem('qr_label_h');
+  const wEl = document.getElementById('label-width');
+  const hEl = document.getElementById('label-height');
+  if(wEl) wEl.value = w!==null ? w : 70;
+  if(hEl) hEl.value = h!==null ? h : 37.125;
 }
 
 // ========== TOAST ==========
